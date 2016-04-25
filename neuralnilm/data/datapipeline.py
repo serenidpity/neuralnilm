@@ -126,3 +126,71 @@ class DataPipeline(object):
         report['target_processing'] = [
             processor.report() for processor in self.target_processing]
         return {'pipeline': report}
+
+    def _get_output_neurons(self, new_batch):
+        batch_size = new_batch.target.shape[0]
+        neural_net_output = np.empty((batch_size, 3))
+        
+        for b in range(batch_size):
+            seq =  new_batch.target[b]
+
+            # case 1 and 2: if the signal start at 0
+            if seq[0] > 0:
+                start = 0
+                stop_array = np.where(seq > 0)[0]
+                # case 2: signal stops after 1
+                # set stop to the last element
+                if len(stop_array) == 0:
+                    stop = seq[-1]
+                # case 1: signal stops before 1
+                else:
+                    stop = stop_array[-1]  
+                # calculate avg power
+                avg_power =  np.mean(seq[start:stop + 1])
+
+            # case 3: signal starts after 0 and before 1
+            else:
+                start_array = np.where(seq > 0)[0]
+                if len(start_array) == 0:
+                    # case 5: there is no signal in the window
+                    start = 0
+                    stop = 0
+                    avg_power = 0
+                else:
+                    start = start_array[0]
+                    # find stop
+                    stop_array = np.where(seq > 0)[0]
+                    # case 4: signal stops after 1
+                    # set to the last element
+                    if len(stop_array) == 0:
+                        stop = seq[-1]
+                    else:
+                        stop = stop_array[-1]        
+                    avg_power =  np.mean(seq[start:stop + 1])
+                    
+            start = start / float(new_batch.target.shape[1] - 1)
+            stop = stop  / float(new_batch.target.shape[1] - 1)
+            if stop < start:
+                raise ValueError("start must be before stop in sequence {}".format(b))
+
+            neural_net_output[b, :] = np.array([start, stop, avg_power])
+
+        return neural_net_output        
+    
+    def train_generator(self, fold='train', enable_all_appliances=False,
+                  source_id=None, reset_iterator=False,
+                  validation=False ):
+        while 1:
+            batch_iter = self.get_batch(fold, enable_all_appliances, source_id, reset_iterator,validation)
+            X_train = batch_iter.input
+            input_dim = X_train.shape[1]
+            Y_train = self._get_output_neurons(batch_iter)
+            yield (np.reshape(X_train, [self.num_seq_per_batch, 1, input_dim]), Y_train.astype(np.float32))
+
+
+
+
+
+
+
+
