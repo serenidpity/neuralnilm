@@ -185,7 +185,7 @@ class DataPipeline(object):
             X_train = batch_iter.input
             input_dim = X_train.shape[1]
             Y_train = self._get_output_neurons(batch_iter)
-            yield (np.reshape(X_train, [self.num_seq_per_batch, 1, input_dim]), Y_train.astype(np.float32))
+            yield (np.reshape(X_train, [self.num_seq_per_batch, input_dim, 1]), Y_train.astype(np.float32))
 
 
 
