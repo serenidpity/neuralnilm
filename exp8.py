@@ -4,9 +4,13 @@ from matplotlib import rcParams
 rcParams['figure.figsize'] = (13, 6)
 plt.style.use('ggplot')
 import numpy as np
+
+# import nilmtk related libraries
 import nilmtk
 from nilmtk.utils import print_dict
 from nilmtk import DataSet
+
+# import developed libraries
 from neuralnilm.data.loadactivations import load_nilmtk_activations
 from neuralnilm.data.syntheticaggregatesource import SyntheticAggregateSource
 from neuralnilm.data.realaggregatesource import RealAggregateSource
@@ -14,11 +18,21 @@ from neuralnilm.data.stridesource import StrideSource
 from neuralnilm.data.datapipeline import DataPipeline
 from neuralnilm.data.processing import DivideBy, IndependentlyCenter
 
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution1D
-from keras.optimizers import SGD
+# import Keras related libraries
+from keras.layers import Input, Dense, Flatten, MaxPooling1D, AveragePooling1D, Convolution1D
+from keras.models import Model
+import keras.callbacks
+from keras.callbacks import ModelCheckpoint
 import time
+from keras.models import model_from_json
+import pickle
+
+
+exp_number = 8
+output_architecture = './tmpdata/convnet_architecture_exp' + str(exp_number) + '.json'
+best_weights_during_run = './tmpdata/weights_exp' + str(exp_number) + '.h5'
+final_weights = './tmpdata/weights_exp' + str(exp_number) + '_final.h5'
+loss_history = './tmpdata/history_exp' + str(exp_number) + '10.pickle'
 
 
 # create dictionary with train, unseen_house, unseen_appliance
@@ -151,10 +165,7 @@ X_valid = np.reshape(X_valid, [X_valid.shape[0],X_valid.shape[1],1])
 
 
 
-from keras.layers import Input, Dense, Flatten, MaxPooling1D, AveragePooling1D
-from keras.models import Model
-import keras.callbacks
-from keras.callbacks import ModelCheckpoint
+# run the neural network
 
 class LossHistory(keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
@@ -179,7 +190,7 @@ conv3 = Convolution1D(nb_filter = 64, filter_length = 4, border_mode='valid',
 flat = Flatten()(conv3)
 # dense1 = Dense(4080, activation = 'relu')(flat)
 # dense2 = Dense(3072, activation = 'relu')(flat)
-dense3 = Dense(1024, activation = 'relu')(flat)
+dense3 = Dense(512, activation = 'relu')(flat)
 dense4 = Dense(512, activation = 'relu', init= 'normal')(dense3)
 predictions = Dense(3, activation = 'linear')(dense4)
 # create the model
@@ -192,18 +203,27 @@ print('compiling time = ', compiling_time)
 # record the loss history
 history = LossHistory()
 # save the weigths when the vlaidation lost decreases only
-checkpointer = ModelCheckpoint(filepath="./tmpdata/weights_exp8.h5", save_best_only=True, verbose =1 )
-hist = model.fit_generator(pipeline.train_generator(fold = 'train'), \
+checkpointer = ModelCheckpoint(filepath=best_weights_during_run, save_best_only=True, verbose =1 )
+model.fit_generator(pipeline.train_generator(fold = 'train'), \
                     samples_per_epoch = 30000, \
-                    nb_epoch = 20, verbose = 1, callbacks=[history, checkpointer],
+                    nb_epoch = 10, verbose = 1, callbacks=[history, checkpointer],
                    validation_data = (x_valid,y_valid), max_q_size = 50)
 print('run time = ', time.time() - starting_time)
+losses_dic = {'train_loss': history.train_losses, 'valid_loss':history.valid_losses}
+# save history
+losses_dic = {'train_loss': history.train_losses, 'valid_loss':history.valid_losses}
+with open(loss_history, 'wb') as handle:
+  pickle.dump(losses_dic, handle)
 
-
-from keras.models import model_from_json
+print('\n saving the architecture of the model \n')
 json_string = model.to_json()
-open('./tmpdata/convnet_architecture_exp8.json', 'w').write(json_string)
+open(output_architecture, 'w').write(json_string)
 
-print('saving the weights ... ')
-model.save_weights('./tmpdata/weights_exp8_final.h5', overwrite = True)
+print('\n saving the final weights ... \n')
+model.save_weights(final_weights, overwrite = True)
 print('done saving the weights')
+
+print('\n saving the training and validation losses')
+
+print('This was the model trained')
+print(model.summary())
