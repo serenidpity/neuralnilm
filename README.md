@@ -2,7 +2,7 @@
 
 This repository is the implementation of convolutional neural network (ConvNet) for energy disaggregation of the REDD data Set available at http://redd.csail.mit.edu. This work is part of a final project for the course AM207 at Harvard University during Spring 2017. Here we host the codes for the convolutional neural network implementation. Other algorithms (Combinatorial Optimization method and a Factorial Hidden Markov Model) were tested on the data set using the NILMTK library (http://nilmtk.github.io). Using Non-Intrusive Load Monitoring data from one house not seen during training we inverted for the activations of the fridge and the microwave. The data set for the unseen house is approximately 6 months long. The long time series is splitted into windows of 85 seconds. We use binary classification as a metric. True positive means that we predict activation during a window while there is indeed an activation of the target appliance. The results of the various methods for different metrics is show here:
 
-![](Scores.pdf)
+![](./figures/Scores.png)
 
 
 
@@ -12,11 +12,11 @@ The ConvNet implementation outperformed the other methods implemented in the NIL
 
 In the context of this project we make use of the REDD data set, a public data set for energy disaggregation research. The REDD dataset is not readily accessible since access can only be granted by the authors at MIT. While REDD, is what made this project possible, it cannot be directly fed into the disaggregation algorithms developed/borrowed in this project. A data Pipeline is necessary to preprocess and feed the data for both training as well as testing purposes. While the training and disaggregation steps are significantly different in all of the methods that we use, the remaining steps are the same and are outlined in this figure.
 
-![](./figures/Qualitative.pdf)
+![](./figures/Qualitative.png)
 
 The redd data set consist of aggregated power from 6 houses with various sampling rates as well as  the power of a set of appliances per house. The recording is unfortunately not continuous in time and does not span the same time period for the all the houses. We downsample the data in order to align the appliances and the main meters time series. The preprocessing is specific to each algorithm used for prediction and is detailed later in this report. However the work flow common to each of the algorithm is shown here
 
-![](./figures/NILM_Data_Pipeline.pdf)
+![](./figures/NILM_Data_Pipeline.png)
 
 # Convolutional Neural Network (ConvNet)
 
@@ -26,7 +26,7 @@ The implementation of the method presented in this section can be found in the n
 
 Convolutional Neural Networks are similar to ordinary Neural Networks (multi-layer perceptrons). Each neuron receive an input, perform a dot product with its weights and follow this with a non-linearity (here we only use ReLu). The whole network has a loss function that is here the Root Mean Square (RMS) error (details later). The network implements the 'rectangle method'. From the input sequence we invert for the start time, the end time and the average power of only one appliance 
 
-![](./figures/convnet_architecture.pdf)
+![](./figures/convnet_architecture.png)
 
 
 Convolutional neural networks have revolutionized computer vision. From an image the convolutional layer learns through its weights low level features. In the case of an image the features detectors (filters) would be: horizontal lines, blobs etc. These filters are built using a small receptive field and share weights across the entire input, which makes them translation invariant. Similarly, in the case of time series, the filters extract low level feature in the time series. By experimenting we found that only using 16 of these filters gives a good predictive power to the ConvNet. This convolutional layer is then flatten and we use 2 hidden layers of 1024 and 512 neurons with ReLu activation function before the output layer of 3 neurons (start time, end time and average power).
