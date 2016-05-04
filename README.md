@@ -2,7 +2,7 @@
 
 This repository is the implementation of convolutional neural network (ConvNet) for energy disaggregation of the REDD data Set available at http://redd.csail.mit.edu. This work is part of a final project for the course AM207 at Harvard University during Spring 2017. Here we host the codes for the convolutional neural network implementation. Other algorithms (Combinatorial Optimization method and a Factorial Hidden Markov Model) were tested on the data set using the NILMTK library (http://nilmtk.github.io). Using Non-Intrusive Load Monitoring data from one house not seen during training we inverted for the activations of the fridge and the microwave. The data set for the unseen house is approximately 6 months long. The long time series is splitted into windows of 85 seconds. We use binary classification as a metric. True positive means that we predict activation during a window while there is indeed an activation of the target appliance. The results of the various methods for different metrics is show here:
 
-![](https://github.com/tperol/neuralnilm/blob/master/figures/Scores.pdf)
+![](Scores.pdf)
 
 
 
